@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpeakSharp</title>
+<style>
+:root {
+  --bg:#0d0d0f;--surface:#18181c;--surface2:#222228;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+  --text:#f0eeeb;--muted:#888680;--accent:#c8a96e;--accent2:#e8c98e;
+  --red:#e05a5a;--green:#5ab88a;--blue:#5a8fe0;--r:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Georgia',serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+header{display:flex;align-items:center;justify-content:space-between;padding:1.25rem 2rem;border-bottom:0.5px solid var(--border);}
+.logo{font-family:'Georgia',serif;font-size:1.2rem;letter-spacing:0.12em;color:var(--accent);}
+.logo span{color:var(--muted);font-size:0.75rem;letter-spacing:0.2em;display:block;margin-top:2px;}
+nav{display:flex;gap:6px;}
+nav button{background:none;border:0.5px solid transparent;color:var(--muted);padding:6px 14px;border-radius:20px;cursor:pointer;font-size:0.82rem;letter-spacing:0.05em;transition:all 0.2s;}
+nav button.active,nav button:hover{color:var(--text);border-color:var(--border2);background:var(--surface);}
+.main{display:flex;flex:1;overflow:hidden;}
+.sidebar{width:260px;min-width:260px;border-right:0.5px solid var(--border);padding:1.5rem 1.25rem;display:flex;flex-direction:column;gap:1.25rem;overflow-y:auto;}
+.sidebar-label{font-size:0.68rem;letter-spacing:0.15em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;}
+.mode-btn{display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:0.5px solid var(--border);color:var(--muted);border-radius:var(--r);cursor:pointer;font-size:0.85rem;transition:all 0.2s;margin-bottom:6px;}
+.mode-btn:hover,.mode-btn.active{background:var(--surface2);border-color:var(--border2);color:var(--text);}
+.mode-btn .mode-icon{font-size:1rem;margin-right:8px;}
+.mode-btn small{display:block;color:var(--muted);font-size:0.72rem;margin-top:2px;padding-left:26px;}
+.content{flex:1;padding:2rem;overflow-y:auto;display:flex;flex-direction:column;gap:1.5rem;}
+.panel{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r);padding:1.5rem;}
+.panel-title{font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:1rem;}
+.question-box{background:var(--surface2);border:0.5px solid var(--border2);border-radius:var(--r);padding:1.25rem 1.5rem;font-size:1.1rem;line-height:1.6;color:var(--text);min-height:80px;display:flex;align-items:center;justify-content:space-between;gap:1rem;}
+.new-q-btn{background:none;border:0.5px solid var(--border2);color:var(--muted);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:0.8rem;white-space:nowrap;transition:all 0.2s;}
+.new-q-btn:hover{color:var(--text);border-color:var(--accent);}
+.framework-tabs{display:flex;gap:8px;margin-bottom:1rem;}
+.fw-tab{padding:5px 14px;border-radius:20px;border:0.5px solid var(--border);background:none;color:var(--muted);cursor:pointer;font-size:0.8rem;transition:all 0.2s;}
+.fw-tab.active{background:var(--accent);color:var(--bg);border-color:var(--accent);}
+.framework-hint{background:var(--surface2);border-left:2px solid var(--accent);padding:0.75rem 1rem;border-radius:0 6px 6px 0;font-size:0.82rem;color:var(--muted);line-height:1.6;}
+.recorder-area{display:flex;flex-direction:column;align-items:center;gap:1rem;padding:1rem 0;}
+.rec-btn{width:72px;height:72px;border-radius:50%;background:var(--surface2);border:2px solid var(--border2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;}
+.rec-btn:hover{border-color:var(--accent);}
+.rec-btn.recording{border-color:var(--red);animation:pulse 1.2s infinite;}
+.rec-dot{width:22px;height:22px;border-radius:50%;background:var(--red);transition:all 0.3s;}
+.rec-btn.recording .rec-dot{border-radius:4px;width:18px;height:18px;}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(224,90,90,0.3);}50%{box-shadow:0 0 0 10px rgba(224,90,90,0);}}
+.rec-status{font-size:0.82rem;color:var(--muted);text-align:center;max-width:380px;line-height:1.5;}
+.rec-timer{font-size:1.4rem;color:var(--text);font-variant-numeric:tabular-nums;}
+.vol-wrap{width:200px;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.vol-label{font-size:0.68rem;color:var(--muted);letter-spacing:0.1em;}
+.vol-meter{width:100%;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;}
+.vol-fill{height:100%;background:var(--green);border-radius:3px;transition:width 0.08s;}
+audio{width:100%;max-width:400px;}
+.pause-legend{font-size:0.72rem;color:var(--muted);margin-bottom:6px;}
+.transcript-box{background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--r);padding:1rem 1.25rem;min-height:80px;font-size:0.9rem;line-height:2;color:var(--text);}
+.transcript-placeholder{color:var(--muted);font-style:italic;}
+.filler{background:rgba(224,90,90,0.22);color:var(--red);border-radius:3px;padding:0 2px;}
+.pt-micro{color:var(--accent);font-size:0.7rem;font-family:monospace;vertical-align:middle;}
+.pt-natural{color:var(--blue);font-size:0.7rem;font-family:monospace;vertical-align:middle;}
+.pt-long{color:var(--red);font-size:0.7rem;font-family:monospace;vertical-align:middle;}
+.pause-chip{font-size:0.72rem;padding:2px 8px;border-radius:10px;font-family:monospace;}
+.pc-micro{background:rgba(200,169,110,0.15);color:var(--accent);border:0.5px solid var(--accent);}
+.pc-natural{background:rgba(90,143,224,0.15);color:var(--blue);border:0.5px solid var(--blue);}
+.pc-long{background:rgba(224,90,90,0.15);color:var(--red);border:0.5px solid var(--red);}
+.analyze-btn{background:var(--accent);color:var(--bg);border:none;padding:10px 28px;border-radius:20px;cursor:pointer;font-size:0.9rem;letter-spacing:0.06em;transition:all 0.2s;font-family:'Georgia',serif;}
+.analyze-btn:hover{background:var(--accent2);}
+.analyze-btn:disabled{opacity:0.4;cursor:not-allowed;}
+.feedback-area{display:flex;flex-direction:column;gap:1rem;}
+.score-row{display:flex;gap:10px;flex-wrap:wrap;}
+.score-card{flex:1;min-width:80px;background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--r);padding:0.85rem 1rem;text-align:center;}
+.sc-val{font-size:1.8rem;font-weight:bold;}
+.sc-label{font-size:0.68rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-top:2px;}
+.sg{color:var(--green);}.sm{color:var(--accent);}.sb{color:var(--red);}
+.fb-section{border-top:0.5px solid var(--border);padding-top:1rem;}
+.fb-section h4{font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent);margin-bottom:0.6rem;}
+.fb-section p,.fb-section li{font-size:0.88rem;line-height:1.7;color:var(--muted);}
+.fb-section li{margin-left:1.2rem;margin-bottom:4px;}
+.gi{color:var(--green);}.bi{color:var(--red);}
+.vocab-item{display:flex;gap:8px;align-items:baseline;margin-bottom:6px;font-size:0.85rem;}
+.vo{color:var(--red);min-width:90px;}.vb{color:var(--green);}
+.prog-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;}
+.prog-card{background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--r);padding:1rem;text-align:center;}
+.prog-val{font-size:1.5rem;color:var(--accent);margin-bottom:4px;}
+.prog-label{font-size:0.72rem;color:var(--muted);}
+.hist-list{display:flex;flex-direction:column;gap:8px;}
+.hist-item{background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--r);padding:0.85rem 1rem;display:flex;justify-content:space-between;align-items:center;}
+.hi-q{font-size:0.85rem;color:var(--text);flex:1;margin-right:1rem;}
+.hi-score{font-size:0.9rem;color:var(--accent);font-weight:bold;}
+.hi-meta{font-size:0.72rem;color:var(--muted);margin-top:2px;}
+.empty{text-align:center;color:var(--muted);padding:2rem;font-size:0.9rem;}
+.loading{color:var(--muted);font-size:0.88rem;font-style:italic;padding:0.5rem 0;}
+.api-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.api-row input{flex:1;background:var(--surface2);border:0.5px solid var(--border2);color:var(--text);padding:8px 12px;border-radius:6px;font-size:0.85rem;font-family:monospace;}
+.api-row input:focus{outline:none;border-color:var(--accent);}
+.save-btn{background:none;border:0.5px solid var(--border2);color:var(--muted);padding:8px 14px;border-radius:6px;cursor:pointer;font-size:0.82rem;transition:all 0.2s;}
+.save-btn:hover{color:var(--text);border-color:var(--accent);}
+.key-badge{font-size:0.78rem;padding:4px 10px;border-radius:20px;}
+.key-ok{background:rgba(90,184,138,0.15);color:var(--green);}
+.key-no{background:rgba(224,90,90,0.12);color:var(--red);}
+.page{display:none;flex-direction:column;gap:1.5rem;width:100%;}
+.page.active{display:flex;}
+.tip-box{background:var(--surface2);border-left:2px solid var(--blue);padding:0.75rem 1rem;border-radius:0 6px 6px 0;font-size:0.82rem;color:var(--muted);line-height:1.7;}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.bar-label{font-size:0.78rem;color:var(--muted);min-width:60px;text-align:right;}
+.bar-track{flex:1;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:4px;transition:width 0.6s ease;}
+.bar-val{font-size:0.78rem;color:var(--muted);min-width:36px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">SpeakSharp <span>SPEAKING COACH</span></div>
+  <nav>
+    <button class="active" onclick="showPage('practice',this)">Practice</button>
+    <button onclick="showPage('progress',this)">Progress</button>
+    <button onclick="showPage('settings',this)">Settings</button>
+  </nav>
+</header>
+
+<div class="main">
+  <div class="sidebar">
+    <div>
+      <div class="sidebar-label">Mode</div>
+      <button class="mode-btn active" onclick="setMode('impromptu',this)">
+        <span class="mode-icon">🎯</span>Impromptu
+        <small>Random topic, timed</small>
+      </button>
+      <button class="mode-btn" onclick="setMode('interview',this)">
+        <span class="mode-icon">💼</span>Interview
+        <small>Behavioural questions</small>
+      </button>
+    </div>
+    <div>
+      <div class="sidebar-label">Framework</div>
+      <div class="framework-tabs">
+        <button class="fw-tab active" onclick="setFramework('PREP',this)">PREP</button>
+        <button class="fw-tab" onclick="setFramework('STAR',this)">STAR</button>
+      </div>
+      <div class="framework-hint" id="fw-hint"></div>
+    </div>
+    <div>
+      <div class="sidebar-label">Session</div>
+      <div style="font-size:0.82rem;color:var(--muted);line-height:1.9;">
+        Attempts: <span id="sb-n" style="color:var(--text)">0</span><br>
+        Avg score: <span id="sb-avg" style="color:var(--text)">—</span><br>
+        Fillers: <span id="sb-f" style="color:var(--text)">0</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- PRACTICE -->
+    <div class="page active" id="page-practice">
+      <div class="panel">
+        <div class="panel-title">Question</div>
+        <div class="question-box">
+          <div id="q-text">Loading...</div>
+          <button class="new-q-btn" onclick="loadQuestion()">New ↺</button>
+        </div>
+        <div class="tip-box" style="margin-top:1rem;" id="fw-tip"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Record</div>
+        <div class="recorder-area">
+          <div class="rec-timer" id="rec-timer">0:00</div>
+          <div class="vol-wrap">
+            <div class="vol-label">MIC LEVEL</div>
+            <div class="vol-meter"><div class="vol-fill" id="vol-fill" style="width:0%"></div></div>
+          </div>
+          <button class="rec-btn" id="rec-btn" onclick="toggleRec()">
+            <div class="rec-dot"></div>
+          </button>
+          <div class="rec-status" id="rec-status">Click to start recording</div>
+          <audio id="playback" controls style="display:none;width:100%;max-width:400px;"></audio>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">
+          Transcript
+          <span style="color:var(--muted);font-size:0.72rem;margin-left:8px;">fillers in red · pauses marked inline</span>
+        </div>
+        <div id="pause-legend" style="display:none;" class="pause-legend">
+          <span class="pt-micro">[p]</span> micro (&lt;1s) &nbsp;
+          <span class="pt-natural">[P]</span> natural (1–3s) &nbsp;
+          <span class="pt-long">[PAUSE]</span> long (&gt;3s)
+        </div>
+        <div class="transcript-box" id="tx-box">
+          <span class="transcript-placeholder">Your transcript will appear here as you speak...</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1rem;flex-wrap:wrap;gap:8px;">
+          <span style="font-size:0.78rem;color:var(--muted);" id="tx-stats"></span>
+          <button class="analyze-btn" id="analyze-btn" onclick="doAnalyze()" disabled>Analyze Response →</button>
+        </div>
+      </div>
+
+      <div class="panel" id="fb-panel" style="display:none;">
+        <div class="panel-title">Feedback</div>
+        <div id="fb-area"></div>
+      </div>
+    </div>
+
+    <!-- PROGRESS -->
+    <div class="page" id="page-progress">
+      <div class="panel">
+        <div class="panel-title">Overview</div>
+        <div class="prog-grid">
+          <div class="prog-card"><div class="prog-val" id="pg-n">0</div><div class="prog-label">Sessions</div></div>
+          <div class="prog-card"><div class="prog-val" id="pg-avg">—</div><div class="prog-label">Avg Score</div></div>
+          <div class="prog-card"><div class="prog-val" id="pg-f">0</div><div class="prog-label">Fillers Caught</div></div>
+          <div class="prog-card"><div class="prog-val" id="pg-best">—</div><div class="prog-label">Best Score</div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Score Trend</div>
+        <div id="score-chart"><div class="empty">No sessions yet.</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">History</div>
+        <div class="hist-list" id="hist-list"><div class="empty">No sessions yet.</div></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="panel">
+        <div class="panel-title">Anthropic API Key</div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem;line-height:1.7;">
+          Get your key at <a href="https://console.anthropic.com" style="color:var(--accent);">console.anthropic.com</a> — free tier available.<br>
+          Stored in memory only. Cleared on tab close.
+        </p>
+        <div class="api-row">
+          <input type="password" id="key-input" placeholder="sk-ant-..."/>
+          <button class="save-btn" onclick="saveKey()">Save</button>
+          <span class="key-badge key-no" id="key-badge">Not set</span>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Run locally (required for mic)</div>
+        <pre style="font-size:0.8rem;color:var(--muted);line-height:1.9;background:var(--surface2);padding:1rem;border-radius:6px;overflow:auto;"># In Terminal, cd to the folder with this file:
+cd ~/Downloads
+
+# Start local server:
+python3 -m http.server 8080
+
+# Open in Chrome:
+http://localhost:8080/speaking-coach.html</pre>
+        <p style="font-size:0.82rem;color:var(--muted);margin-top:0.75rem;line-height:1.6;">
+          Must use <code style="color:var(--accent)">localhost</code> — mic is blocked on <code>file://</code> URLs.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ── DATA ── */
+const FILLERS = ['um','uh','er','ah','hmm','like','you know','basically','literally','actually','so','right','okay','kind of','sort of','i mean','well'];
+
+const IQ = [
+  "Should people be required to vote? Why or why not?",
+  "What is the most important skill for a leader to have?",
+  "If you could change one thing about how schools work, what would it be?",
+  "Is remote work better or worse for productivity?",
+  "What does success mean to you?",
+  "Should social media platforms censor content?",
+  "What skill should everyone learn before age 25?",
+  "Is it better to be liked or respected?",
+  "How has technology changed communication — for better or worse?",
+  "What makes a city truly great to live in?",
+  "Should companies be forced to cut carbon emissions by law?",
+  "Is competition healthy in a workplace?",
+  "What habit do most people underestimate in building success?",
+  "Should AI be used in hiring decisions?",
+  "What is something most people believe that you think is wrong?"
+];
+
+const BQ = [
+  "Tell me about a time you handled a difficult stakeholder.",
+  "Describe a project where you had to work with limited resources.",
+  "Tell me about a time you disagreed with your manager.",
+  "Tell me about a time you failed. What did you learn?",
+  "Describe a moment you had to decide without full information.",
+  "How did you prioritise when you had too much on your plate?",
+  "Tell me about a time you influenced someone without authority.",
+  "Describe a situation where you turned around a failing project.",
+  "How have you handled feedback you initially disagreed with?",
+  "Tell me about a time you learned something quickly under pressure."
+];
+
+const FW = {
+  PREP:{
+    hint:'<b style="color:var(--accent)">P</b>oint &rarr; <b style="color:var(--accent)">R</b>eason &rarr; <b style="color:var(--accent)">E</b>xample &rarr; <b style="color:var(--accent)">P</b>oint (restate)',
+    tip:'Start with your main point. Give the reason. Support with an example. Close by restating the point.'
+  },
+  STAR:{
+    hint:'<b style="color:var(--accent)">S</b>ituation &rarr; <b style="color:var(--accent)">T</b>ask &rarr; <b style="color:var(--accent)">A</b>ction &rarr; <b style="color:var(--accent)">R</b>esult',
+    tip:'Set the context. Define your role. Explain the specific actions you took. Share the outcome — use numbers if possible.'
+  }
+};
+
+/* ── STATE ── */
+let S = {
+  mode:'impromptu', fw:'PREP', question:'',
+  transcript:'', finalText:'', apiKey:'',
+  recording:false,
+  mediaRecorder:null, audioChunks:[],
+  timerSec:0, timerIv:null,
+  recognition:null,
+  pauses:[], silenceStart:null, lastPauseAt:0,
+  audioCtx:null, analyser:null, volIv:null,
+  sessions:[], totalFillers:0
+};
+
+/* ── NAV ── */
+function showPage(name,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  if(name==='progress') renderProgress();
+}
+function setMode(m,btn){
+  S.mode=m;
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  loadQuestion();
+}
+function setFramework(fw,btn){
+  S.fw=fw;
+  document.querySelectorAll('.fw-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('fw-hint').innerHTML=FW[fw].hint;
+  document.getElementById('fw-tip').textContent=FW[fw].tip;
+}
+function loadQuestion(){
+  const pool=S.mode==='impromptu'?IQ:BQ;
+  S.question=pool[Math.floor(Math.random()*pool.length)];
+  document.getElementById('q-text').textContent=S.question;
+  resetPractice();
+}
+function resetPractice(){
+  S.transcript=''; S.finalText=''; S.pauses=[];
+  S.silenceStart=null; S.lastPauseAt=0;
+  document.getElementById('tx-box').innerHTML='<span class="transcript-placeholder">Your transcript will appear here as you speak...</span>';
+  document.getElementById('tx-stats').textContent='';
+  document.getElementById('analyze-btn').disabled=true;
+  document.getElementById('fb-panel').style.display='none';
+  document.getElementById('pause-legend').style.display='none';
+  document.getElementById('playback').style.display='none';
+  document.getElementById('rec-timer').textContent='0:00';
+}
+
+/* ── STATUS ── */
+function setStatus(msg,color){
+  const el=document.getElementById('rec-status');
+  el.textContent=msg;
+  el.style.color=color||'var(--muted)';
+}
+
+/* ── VOLUME MONITOR + PAUSE DETECTION ── */
+function startVolMonitor(stream){
+  try {
+    S.audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    const src=S.audioCtx.createMediaStreamSource(stream);
+    S.analyser=S.audioCtx.createAnalyser();
+    S.analyser.fftSize=512;
+    src.connect(S.analyser);
+    const buf=new Uint8Array(S.analyser.frequencyBinCount);
+    const THRESH=10; // RMS silence threshold
+
+    S.volIv=setInterval(()=>{
+      if(!S.recording) return;
+      S.analyser.getByteTimeDomainData(buf);
+      let sum=0;
+      for(let i=0;i<buf.length;i++){const v=(buf[i]-128)/128;sum+=v*v;}
+      const rms=Math.sqrt(sum/buf.length)*100;
+
+      // Volume bar
+      document.getElementById('vol-fill').style.width=Math.min(100,rms*3.5)+'%';
+      document.getElementById('vol-fill').style.background=rms<THRESH?'var(--red)':'var(--green)';
+
+      const now=S.timerSec;
+      if(rms<THRESH){
+        if(S.silenceStart===null) S.silenceStart=now;
+        const dur=now-S.silenceStart;
+        const gap=now-S.lastPauseAt;
+        if(gap>1.5){
+          if(dur>=3){
+            S.pauses.push({type:'long',at:S.silenceStart});
+            S.lastPauseAt=now; S.silenceStart=now;
+            refreshTranscript();
+          } else if(dur>=1){
+            S.pauses.push({type:'natural',at:S.silenceStart});
+            S.lastPauseAt=now; S.silenceStart=now;
+            refreshTranscript();
+          } else if(dur>=0.4){
+            S.pauses.push({type:'micro',at:S.silenceStart});
+            S.lastPauseAt=now; S.silenceStart=now;
+          }
+        }
+      } else {
+        S.silenceStart=null;
+      }
+    },100);
+  } catch(e){ console.warn('Vol monitor failed:',e); }
+}
+
+function stopVolMonitor(){
+  if(S.volIv){clearInterval(S.volIv);S.volIv=null;}
+  if(S.audioCtx){S.audioCtx.close();S.audioCtx=null;}
+  document.getElementById('vol-fill').style.width='0%';
+}
+
+/* ── SPEECH RECOGNITION ── */
+function startASR(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){
+    setStatus('Speech recognition not available — use Chrome. You can type manually below.','var(--red)');
+    showTypeBox(); return;
+  }
+  const rec=new SR();
+  rec.continuous=true;
+  rec.interimResults=true;
+  rec.maxAlternatives=1;
+  rec.lang='en-IN';
+  S.recognition=rec;
+
+  rec.onstart=()=>setStatus('Recording — speak clearly','var(--red)');
+
+  rec.onresult=(e)=>{
+    let interim='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      if(e.results[i].isFinal) S.finalText+=e.results[i][0].transcript+' ';
+      else interim+=e.results[i][0].transcript;
+    }
+    S.transcript=S.finalText+interim;
+    refreshTranscript();
+    const wc=S.transcript.trim().split(/\s+/).filter(Boolean).length;
+    document.getElementById('tx-stats').textContent=wc+' words · '+S.pauses.length+' pauses detected';
+    document.getElementById('analyze-btn').disabled=S.transcript.trim().length<10;
+  };
+
+  rec.onerror=(e)=>{
+    if(e.error==='not-allowed'){
+      setStatus('Mic blocked — allow microphone in browser settings','var(--red)');
+      stopRecording();
+    } else if(e.error==='network'){
+      setStatus('Network error — Chrome speech recognition needs internet','var(--red)');
+    } else if(e.error==='no-speech'){
+      /* silence — normal */
+    } else {
+      console.warn('ASR error:',e.error);
+      setStatus('Recognition issue: '+e.error+' — try speaking louder','var(--muted)');
+    }
+  };
+
+  // Chrome auto-stops after silence — restart
+  rec.onend=()=>{
+    if(S.recording){
+      setTimeout(()=>{ try{rec.start();}catch(e){} },150);
+    }
+  };
+
+  try{ rec.start(); }
+  catch(e){ setStatus('Cannot start recognition: '+e.message,'var(--red)'); }
+}
+
+function showTypeBox(){
+  document.getElementById('tx-box').innerHTML=
+    '<textarea id="manual-tx" style="width:100%;background:transparent;border:none;color:var(--text);font-size:0.9rem;min-height:100px;resize:vertical;outline:none;font-family:Georgia,serif;" placeholder="Type your response here..."></textarea>';
+  document.getElementById('manual-tx').addEventListener('input',function(){
+    S.transcript=this.value;
+    document.getElementById('analyze-btn').disabled=this.value.trim().length<10;
+  });
+}
+
+/* ── TRANSCRIPT RENDER ── */
+function refreshTranscript(){
+  if(!S.transcript.trim()) return;
+  document.getElementById('pause-legend').style.display=S.pauses.length?'block':'none';
+
+  // Mark fillers
+  let html=S.transcript;
+  for(const fw of FILLERS){
+    html=html.replace(new RegExp('\\b('+fw+')\\b','gi'),'<span class="filler">$1</span>');
+  }
+
+  // Append pause markers
+  if(S.pauses.length){
+    html+='<br><span style="color:var(--muted);font-size:0.75rem;">Pauses: </span>';
+    S.pauses.forEach(p=>{
+      if(p.type==='long') html+='<span class="pt-long">[PAUSE] </span>';
+      else if(p.type==='natural') html+='<span class="pt-natural">[P] </span>';
+      else html+='<span class="pt-micro">[p] </span>';
+    });
+  }
+
+  document.getElementById('tx-box').innerHTML=html;
+}
+
+function countFillers(text){
+  let c=0; const lower=text.toLowerCase();
+  for(const fw of FILLERS){ const m=lower.match(new RegExp('\\b'+fw+'\\b','g')); if(m)c+=m.length; }
+  return c;
+}
+
+/* ── RECORDING ── */
+function toggleRec(){
+  if(!S.recording) startRecording();
+  else stopRecording();
+}
+
+async function startRecording(){
+  resetPractice();
+  try {
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    S.audioChunks=[];
+
+    // Pick best supported mime
+    const mime=['audio/webm;codecs=opus','audio/webm','audio/ogg'].find(m=>{ try{return MediaRecorder.isTypeSupported(m);}catch(e){return false;} })||'';
+    S.mediaRecorder=new MediaRecorder(stream,mime?{mimeType:mime}:{});
+    S.mediaRecorder.ondataavailable=e=>{ if(e.data&&e.data.size>0) S.audioChunks.push(e.data); };
+    S.mediaRecorder.onstop=()=>{
+      const blob=new Blob(S.audioChunks,{type:S.mediaRecorder.mimeType||'audio/webm'});
+      const url=URL.createObjectURL(blob);
+      const au=document.getElementById('playback');
+      au.src=url; au.style.display='block';
+      stream.getTracks().forEach(t=>t.stop());
+    };
+    S.mediaRecorder.start(250);
+
+    S.recording=true; S.timerSec=0;
+    document.getElementById('rec-btn').classList.add('recording');
+    setStatus('Recording — speak clearly into your mic','var(--red)');
+
+    S.timerIv=setInterval(()=>{
+      S.timerSec++;
+      const m=Math.floor(S.timerSec/60),s=S.timerSec%60;
+      document.getElementById('rec-timer').textContent=m+':'+String(s).padStart(2,'0');
+    },1000);
+
+    startVolMonitor(stream);
+    startASR();
+
+  } catch(err){
+    if(err.name==='NotAllowedError'||err.name==='PermissionDeniedError'){
+      setStatus('Mic denied — click the lock icon in the address bar and allow microphone access','var(--red)');
+    } else if(err.name==='NotFoundError'){
+      setStatus('No microphone found — connect one and try again','var(--red)');
+    } else {
+      setStatus('Mic error: '+err.message,'var(--red)');
+    }
+  }
+}
+
+function stopRecording(){
+  S.recording=false;
+  clearInterval(S.timerIv);
+  stopVolMonitor();
+  if(S.mediaRecorder&&S.mediaRecorder.state!=='inactive') S.mediaRecorder.stop();
+  if(S.recognition){ try{S.recognition.stop();}catch(e){} S.recognition=null; }
+  document.getElementById('rec-btn').classList.remove('recording');
+  setStatus('Done. Play back your recording. Click Analyze when ready.','var(--muted)');
+  refreshTranscript();
+  if(S.transcript.trim().length>=10) document.getElementById('analyze-btn').disabled=false;
+}
+
+/* ── ANALYZE ── */
+async function doAnalyze(){
+  if(!S.apiKey){
+    alert('Add your Anthropic API key in Settings first.');
+    showPage('settings',null); return;
+  }
+  if(!S.transcript.trim()){
+    alert('No transcript. Record your response first.'); return;
+  }
+
+  document.getElementById('analyze-btn').disabled=true;
+  document.getElementById('analyze-btn').textContent='Analyzing...';
+  document.getElementById('fb-panel').style.display='block';
+  document.getElementById('fb-area').innerHTML='<div class="loading">Claude is reviewing your response...</div>';
+
+  const fc=countFillers(S.transcript);
+  const wc=S.transcript.trim().split(/\s+/).filter(Boolean).length;
+  const dur=S.timerSec;
+  const wpm=dur>0?Math.round((wc/dur)*60):0;
+  const microP=S.pauses.filter(p=>p.type==='micro').length;
+  const natP=S.pauses.filter(p=>p.type==='natural').length;
+  const longP=S.pauses.filter(p=>p.type==='long').length;
+
+  const prompt=`You are a strict speaking coach. Analyze this spoken response honestly. Do not inflate scores.
+
+QUESTION: "${S.question}"
+FRAMEWORK: ${S.fw}
+TRANSCRIPT: "${S.transcript}"
+STATS: ${dur}s | ${wc} words | ${wpm} WPM | ${fc} filler words
+PAUSES DETECTED: ${microP} micro (<1s), ${natP} natural (1-3s), ${longP} long (>3s)
+
+Return ONLY a valid JSON object. No markdown. No text outside the JSON.
+{
+  "structure_score": <integer 0-10>,
+  "fluency_score": <integer 0-10>,
+  "clarity_score": <integer 0-10>,
+  "overall_score": <integer 0-10>,
+  "framework_followed": <true|false>,
+  "framework_breakdown": "<1-2 sentences on how well they followed ${S.fw}, be specific>",
+  "pause_analysis": "<honest analysis of their pause pattern — are they hesitating or using pauses strategically?>",
+  "strengths": ["<specific strength>","<specific strength>"],
+  "improvements": ["<specific fix>","<specific fix>","<specific fix>"],
+  "vocabulary_swaps": [{"original":"<weak word or phrase from transcript>","better":"<stronger alternative>"}],
+  "fluency_note": "<specific observation on pacing, sentence fragments, run-ons, or flow>",
+  "one_line_verdict": "<one honest blunt sentence>"
+}`;
+
+  try {
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':S.apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1200,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+
+    if(!res.ok){
+      const e=await res.json().catch(()=>({}));
+      throw new Error(e.error?.message||'HTTP '+res.status+' — check API key');
+    }
+
+    const data=await res.json();
+    const raw=data.content.find(b=>b.type==='text')?.text||'';
+    const clean=raw.replace(/```json|```/g,'').trim();
+
+    let fb;
+    try{ fb=JSON.parse(clean); }
+    catch(e){ throw new Error('Malformed response from Claude. Check API key credits.\n\n'+clean.slice(0,300)); }
+
+    S.sessions.push({question:S.question,score:fb.overall_score,fillers:fc,pauses:S.pauses.length,fw:S.fw,time:new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})});
+    S.totalFillers+=fc;
+    updateSidebar();
+    renderFeedback(fb,fc,wpm,microP,natP,longP);
+
+  } catch(err){
+    document.getElementById('fb-area').innerHTML=
+      `<div style="color:var(--red);font-size:0.88rem;line-height:1.8;">
+        <strong>Error:</strong> ${err.message}<br><br>
+        Check:<br>
+        &bull; API key is correct and has credits (Settings)<br>
+        &bull; Page is served via <code>localhost</code>, not file://<br>
+        &bull; You have internet access
+      </div>`;
+  }
+
+  document.getElementById('analyze-btn').disabled=false;
+  document.getElementById('analyze-btn').textContent='Analyze Response →';
+}
+
+/* ── RENDER FEEDBACK ── */
+function sc(n){return n>=7?'sg':n>=4?'sm':'sb';}
+
+function renderFeedback(fb,fc,wpm,microP,natP,longP){
+  const vocab=(fb.vocabulary_swaps||[]).map(v=>
+    `<div class="vocab-item"><span class="vo">${v.original}</span><span style="color:var(--muted)">→</span><span class="vb">${v.better}</span></div>`
+  ).join('')||'<span style="color:var(--muted);font-size:0.85rem;">No weak vocabulary found.</span>';
+
+  const str=(fb.strengths||[]).map(s=>`<li class="gi">✓ ${s}</li>`).join('');
+  const imp=(fb.improvements||[]).map(s=>`<li class="bi">✗ ${s}</li>`).join('');
+
+  document.getElementById('fb-area').innerHTML=`
+    <div style="background:var(--surface2);border-left:2px solid var(--accent);padding:0.75rem 1rem;border-radius:0 6px 6px 0;font-size:0.9rem;color:var(--text);font-style:italic;margin-bottom:0.5rem;">
+      "${fb.one_line_verdict}"
+    </div>
+    <div class="score-row">
+      <div class="score-card"><div class="sc-val ${sc(fb.structure_score)}">${fb.structure_score}</div><div class="sc-label">Structure</div></div>
+      <div class="score-card"><div class="sc-val ${sc(fb.fluency_score)}">${fb.fluency_score}</div><div class="sc-label">Fluency</div></div>
+      <div class="score-card"><div class="sc-val ${sc(fb.clarity_score)}">${fb.clarity_score}</div><div class="sc-label">Clarity</div></div>
+      <div class="score-card"><div class="sc-val ${sc(fb.overall_score)}">${fb.overall_score}</div><div class="sc-label">Overall</div></div>
+      <div class="score-card"><div class="sc-val ${fc>5?'sb':fc>2?'sm':'sg'}">${fc}</div><div class="sc-label">Fillers</div></div>
+      <div class="score-card"><div class="sc-val" style="color:var(--blue)">${wpm}</div><div class="sc-label">WPM</div></div>
+    </div>
+    <div class="fb-section">
+      <h4>Pause Analysis</h4>
+      <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+        <span class="pause-chip pc-micro">${microP} micro</span>
+        <span class="pause-chip pc-natural">${natP} natural</span>
+        <span class="pause-chip pc-long">${longP} long</span>
+      </div>
+      <p>${fb.pause_analysis}</p>
+    </div>
+    <div class="fb-section">
+      <h4>${S.fw} Framework</h4>
+      <p style="margin-bottom:6px;color:${fb.framework_followed?'var(--green)':'var(--red)'};">${fb.framework_followed?'✓ Followed':'✗ Not clearly followed'}</p>
+      <p>${fb.framework_breakdown}</p>
+    </div>
+    <div class="fb-section"><h4>Strengths</h4><ul>${str||'<li style="color:var(--muted)">None identified.</li>'}</ul></div>
+    <div class="fb-section"><h4>Improvements</h4><ul>${imp||'<li style="color:var(--muted)">None needed.</li>'}</ul></div>
+    <div class="fb-section"><h4>Vocabulary Upgrades</h4>${vocab}</div>
+    <div class="fb-section"><h4>Fluency Note</h4><p>${fb.fluency_note}</p></div>
+  `;
+}
+
+/* ── SIDEBAR + PROGRESS ── */
+function updateSidebar(){
+  const n=S.sessions.length;
+  const avg=n?Math.round(S.sessions.reduce((a,s)=>a+s.score,0)/n*10)/10:null;
+  document.getElementById('sb-n').textContent=n;
+  document.getElementById('sb-avg').textContent=avg!==null?avg+'/10':'—';
+  document.getElementById('sb-f').textContent=S.totalFillers;
+}
+function renderProgress(){
+  const ss=S.sessions,n=ss.length;
+  document.getElementById('pg-n').textContent=n;
+  if(n){
+    document.getElementById('pg-avg').textContent=(ss.reduce((a,s)=>a+s.score,0)/n).toFixed(1)+'/10';
+    document.getElementById('pg-best').textContent=Math.max(...ss.map(s=>s.score))+'/10';
+    document.getElementById('pg-f').textContent=ss.reduce((a,s)=>a+s.fillers,0);
+    document.getElementById('score-chart').innerHTML=ss.slice(-8).map((s,i)=>`
+      <div class="bar-row">
+        <div class="bar-label">#${ss.length-Math.min(8,ss.length)+i+1}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${s.score*10}%;background:${s.score>=7?'var(--green)':s.score>=4?'var(--accent)':'var(--red)'};"></div></div>
+        <div class="bar-val">${s.score}/10</div>
+      </div>`).join('');
+    document.getElementById('hist-list').innerHTML=[...ss].reverse().slice(0,10).map(s=>`
+      <div class="hist-item">
+        <div>
+          <div class="hi-q">${s.question.slice(0,70)}${s.question.length>70?'...':''}</div>
+          <div class="hi-meta">${s.fw} · ${s.fillers} fillers · ${s.pauses} pauses · ${s.time}</div>
+        </div>
+        <div class="hi-score">${s.score}/10</div>
+      </div>`).join('');
+  } else {
+    ['pg-avg','pg-best'].forEach(id=>document.getElementById(id).textContent='—');
+    document.getElementById('pg-f').textContent='0';
+  }
+}
+
+function saveKey(){
+  const v=document.getElementById('key-input').value.trim();
+  if(v.startsWith('sk-')){
+    S.apiKey=v;
+    document.getElementById('key-badge').textContent='Saved ✓';
+    document.getElementById('key-badge').className='key-badge key-ok';
+  } else {
+    alert('Key should start with sk-ant- — copy from console.anthropic.com');
+  }
+}
+
+/* ── INIT ── */
+setFramework('PREP',document.querySelector('.fw-tab.active'));
+loadQuestion();
+
+// Browser check
+(()=>{
+  if(location.protocol==='file:'){
+    setStatus('⚠ Opened via file:// — mic is blocked. Run: python3 -m http.server 8080, then open http://localhost:8080/speaking-coach.html in Chrome','var(--accent)');
+    return;
+  }
+  const issues=[];
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia) issues.push('MediaDevices API missing');
+  if(!window.MediaRecorder) issues.push('MediaRecorder missing');
+  if(!window.SpeechRecognition&&!window.webkitSpeechRecognition) issues.push('Speech recognition unavailable — use Chrome');
+  if(issues.length) setStatus(issues.join(' · '),'var(--red)');
+})();
+</script>
+</body>
+</html>

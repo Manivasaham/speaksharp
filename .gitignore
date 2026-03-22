@@ -1,0 +1,20 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Secrets — never commit API keys
+.env
+.env.local
+secrets.txt
+api_key.txt
+
+# Logs
+*.log

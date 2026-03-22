@@ -1,0 +1,83 @@
+[
+  {
+    "question": "How has technology changed communication — for better or worse?",
+    "score": 3,
+    "fillers": 1,
+    "pauses": 28,
+    "fw": "PREP",
+    "time": "01:26 pm"
+  },
+  {
+    "question": "Is it better to be liked or respected?",
+    "score": 1,
+    "fillers": 2,
+    "pauses": 28,
+    "fw": "PREP",
+    "time": "01:38 pm"
+  },
+  {
+    "question": "What is the most important skill for a leader to have?",
+    "score": 2,
+    "fillers": 4,
+    "pauses": 27,
+    "fw": "PREP",
+    "time": "02:50 pm",
+    "feedback": {
+      "structure_score": 2,
+      "fluency_score": 3,
+      "clarity_score": 2,
+      "overall_score": 2,
+      "framework_followed": false,
+      "framework_breakdown": "PREP framework completely ignored - no clear Point stated, vague Reason about inspiration and bird's eye view, no relevant Example provided, and Position never reinforced or concluded.",
+      "pause_analysis": "27 natural pauses indicate excessive hesitation and searching for words rather than strategic pacing - speaker is clearly struggling to formulate coherent thoughts.",
+      "strengths": [
+        "Attempts to address the topic directly",
+        "Shows awareness that leadership requires broader perspective"
+      ],
+      "improvements": [
+        "Follow PREP structure with clear point upfront",
+        "Complete sentences before moving to next thought",
+        "Provide concrete examples instead of vague concepts"
+      ],
+      "vocabulary_swaps": [
+        {
+          "original": "she maybe doing things the way you look it is wrong",
+          "better": "they might take actions that appear incorrect initially"
+        },
+        {
+          "original": "bird I view",
+          "better": "bird's eye view or strategic perspective"
+        },
+        {
+          "original": "closed discussion with the internal discussion",
+          "better": "thorough internal deliberation"
+        }
+      ],
+      "fluency_note": "Speech contains multiple sentence fragments, grammatical errors, and incomplete thoughts that severely impact comprehension and flow.",
+      "one_line_verdict": "This response lacks coherent structure, clear communication, and demonstrates significant preparation and language organization issues.",
+      "sample_speech": "Point: The most important leadership skill is effective communication. Reason: Leaders must inspire, guide, and align their teams toward common goals, which is impossible without clear communication. Example: Consider how Steve Jobs transformed Apple by communicating his vision so compellingly that employees believed in revolutionary products before they existed. His ability to articulate complex ideas simply motivated teams to achieve the impossible. Position: Therefore, while leaders need many skills, communication remains fundamental because it amplifies every other leadership capability and creates the trust necessary for organizational success.",
+      "vocabulary_explanations": [
+        {
+          "word": "articulate",
+          "meaning": "express ideas clearly and effectively",
+          "usage": "Great leaders articulate their vision in ways that inspire action."
+        },
+        {
+          "word": "deliberation",
+          "meaning": "careful consideration and discussion",
+          "usage": "The decision required extensive deliberation among stakeholders."
+        },
+        {
+          "word": "strategic perspective",
+          "meaning": "ability to see the bigger picture and long-term implications",
+          "usage": "Successful CEOs maintain a strategic perspective on market trends."
+        }
+      ],
+      "improvement_steps": {
+        "structure": "Practice PREP daily: state your Point in one sentence, give one clear Reason, provide one specific Example, then restate your Position - write it out before speaking.",
+        "fluency": "Record yourself speaking for 60 seconds daily, then transcribe and identify incomplete sentences - practice completing each thought before moving to the next.",
+        "clarity": "Use simple subject-verb-object sentences, avoid complex ideas until basic grammar improves, and practice explaining one concept at a time without jumping between thoughts."
+      }
+    }
+  }
+]

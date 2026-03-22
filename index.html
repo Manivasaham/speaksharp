@@ -11,6 +11,14 @@
   --text:#f0eeeb;--muted:#888680;--accent:#c8a96e;--accent2:#e8c98e;
   --red:#e05a5a;--green:#5ab88a;--blue:#5a8fe0;--r:10px;
 }
+body.light {
+  --bg:#f5f3ef;--surface:#ffffff;--surface2:#f0ede8;
+  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);
+  --text:#1a1a18;--muted:#6b6965;--accent:#9a7a3a;--accent2:#b8943a;
+  --red:#c0392b;--green:#27795a;--blue:#2563a8;
+}
+.theme-toggle{background:none;border:0.5px solid var(--border2);color:var(--muted);width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:all 0.2s;}
+.theme-toggle:hover{color:var(--text);border-color:var(--accent);}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Georgia',serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
 header{display:flex;align-items:center;justify-content:space-between;padding:1.25rem 2rem;border-bottom:0.5px solid var(--border);}
@@ -130,7 +138,11 @@ audio{width:100%;max-width:400px;}
 <body>
 
 <header>
-  <div class="logo">SpeakSharp <span>SPEAKING COACH</span></div>
+  <div class="logo" onclick="showPage('practice', document.querySelector('nav button'))" style="cursor:pointer;">SpeakSharp <span>SPEAKING COACH</span></div>
+  <nav>
+    <div style="display:flex;align-items:center;gap:10px;">
+    <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()" title="Toggle light/dark">🌙</button>
+  </div>
   <nav>
     <button class="active" onclick="showPage('practice',this)">Practice</button>
     <button onclick="showPage('coach',this)">Coach</button>
@@ -301,10 +313,16 @@ audio{width:100%;max-width:400px;}
         <div class="panel-title">Score Trend</div>
         <div id="score-chart"><div class="empty">No sessions yet.</div></div>
       </div>
-      <div class="panel">
-        <div class="panel-title">History</div>
-        <div class="hist-list" id="hist-list"><div class="empty">No sessions yet.</div></div>
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+        <div class="panel-title" style="margin-bottom:0;">History</div>
+        <div style="display:flex;gap:8px;">
+          <button class="save-btn" onclick="exportHistory()">Export ↓</button>
+          <button class="save-btn" onclick="document.getElementById('import-input').click()">Import ↑</button>
+        </div>
       </div>
+      <div class="hist-list" id="hist-list"><div class="empty">No sessions yet.</div></div>
+</div>
     </div>
 
     <!-- SETTINGS -->
@@ -327,7 +345,15 @@ audio{width:100%;max-width:400px;}
           Your practice history is saved in your browser's localStorage — it persists across tab closes and restarts.<br>
           Path: <code style="color:var(--accent)">localStorage → speaksharp_sessions</code>
         </p>
-        <button class="save-btn" onclick="clearHistory()" style="border-color:var(--red);color:var(--red);">Clear All History</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:0.5rem;">
+        <button class="save-btn" onclick="exportHistory()">Export History ↓</button>
+        <button class="save-btn" onclick="document.getElementById('import-input').click()">Import History ↑</button>
+        <button class="save-btn" onclick="clearHistory()" style="border-color:var(--red);color:var(--red);">Clear All</button>
+      </div>
+      <input type="file" id="import-input" accept=".json" style="display:none;" onchange="importHistory(event)"/>
+      <div style="font-size:0.78rem;color:var(--muted);margin-top:8px;line-height:1.6;">
+        Export after every session. Import to restore on any machine.
+      </div>
       </div>
       <div class="panel">
         <div class="panel-title">Run locally (required for mic)</div>
@@ -352,23 +378,7 @@ http://localhost:8080/speaking-coach.html</pre>
 /* ── DATA ── */
 const FILLERS = ['um','uh','er','ah','hmm','like','you know','basically','literally','actually','so','right','okay','kind of','sort of','i mean','well'];
 
-const IQ = [
-  "Should people be required to vote? Why or why not?",
-  "What is the most important skill for a leader to have?",
-  "If you could change one thing about how schools work, what would it be?",
-  "Is remote work better or worse for productivity?",
-  "What does success mean to you?",
-  "Should social media platforms censor content?",
-  "What skill should everyone learn before age 25?",
-  "Is it better to be liked or respected?",
-  "How has technology changed communication — for better or worse?",
-  "What makes a city truly great to live in?",
-  "Should companies be forced to cut carbon emissions by law?",
-  "Is competition healthy in a workplace?",
-  "What habit do most people underestimate in building success?",
-  "Should AI be used in hiring decisions?",
-  "What is something most people believe that you think is wrong?"
-];
+let IQ = [];
 
 const BQ = [
   "Tell me about a time you handled a difficult stakeholder.",
@@ -395,6 +405,27 @@ const FW = {
 };
 
 /* ── STATE ── */
+/* ── LOAD TOPICS ── */
+async function loadTopics(){
+  try {
+    const res = await fetch('table_topics.txt');
+    if(!res.ok) throw new Error('File not found');
+    const text = await res.text();
+    IQ = text.split('\n')
+      .map(l => l.replace(/^\d+\.\s*/, '').trim())
+      .filter(l => l.length > 10);
+    loadQuestion();
+  } catch(e){
+    console.warn('Could not load table_topics.txt:', e);
+    IQ = ["What is the most important lesson you have learned in life?",
+          "How do you define success?",
+          "What skill should everyone learn before age 25?",
+          "Is it better to be liked or respected?",
+          "How do you handle failure?"];
+    loadQuestion();
+  }
+}
+
 let S = {
   mode:'impromptu', fw:'PREP', question:'',
   transcript:'', finalText:'', apiKey:'',
@@ -684,28 +715,63 @@ async function doAnalyze(){
   const natP=S.pauses.filter(p=>p.type==='natural').length;
   const longP=S.pauses.filter(p=>p.type==='long').length;
 
-  const prompt=`You are a strict speaking coach. Analyze this spoken response honestly. Do not inflate scores.
+  const prompt = `You are a strict speaking coach. Analyze this spoken response and create a complete growth roadmap.
 
 QUESTION: "${S.question}"
 FRAMEWORK: ${S.fw}
 TRANSCRIPT: "${S.transcript}"
 STATS: ${dur}s | ${wc} words | ${wpm} WPM | ${fc} filler words
-PAUSES DETECTED: ${microP} micro (<1s), ${natP} natural (1-3s), ${longP} long (>3s)
+PAUSES: ${microP} micro (<1s), ${natP} natural (1-3s), ${longP} long (>3s)
 
-Return ONLY a valid JSON object. No markdown. No text outside the JSON.
+Return ONLY valid JSON, no markdown, no text outside:
 {
   "structure_score": <integer 0-10>,
   "fluency_score": <integer 0-10>,
   "clarity_score": <integer 0-10>,
   "overall_score": <integer 0-10>,
   "framework_followed": <true|false>,
-  "framework_breakdown": "<1-2 sentences on how well they followed ${S.fw}, be specific>",
-  "pause_analysis": "<honest analysis of their pause pattern — are they hesitating or using pauses strategically?>",
-  "strengths": ["<specific strength>","<specific strength>"],
+  "framework_breakdown": "<1-2 sentences specific to their transcript>",
+  "pause_analysis": "<honest analysis of pause pattern>",
+  "one_line_verdict": "<one blunt honest sentence>",
+  "strengths": ["<specific strength from transcript>","<specific strength>"],
   "improvements": ["<specific fix>","<specific fix>","<specific fix>"],
-  "vocabulary_swaps": [{"original":"<weak word or phrase from transcript>","better":"<stronger alternative>"}],
-  "fluency_note": "<specific observation on pacing, sentence fragments, run-ons, or flow>",
-  "one_line_verdict": "<one honest blunt sentence>"
+  "fluency_note": "<specific observation on pacing, fragments, run-ons>",
+  "vocabulary_swaps": [{"original":"<weak phrase from transcript>","better":"<stronger alternative>"}],
+  "tone": {
+    "label": "<one word: Positive | Constructive | Neutral | Negative | Complaining>",
+    "score": <0-100, where 100 is fully positive>,
+    "signals": ["<exact word or phrase from transcript that signals this tone>","<another>"],
+    "advice": "<1-2 sentences on how to shift tone if needed>"
+  },
+  "gap_plan": {
+    "fluency": {
+      "current_score": <their fluency score>,
+      "current_sounds_like": "<1 sentence describing what speaking at this level sounds like — be specific and honest>",
+      "level_7_sounds_like": "<1 sentence describing what fluency 7 sounds like>",
+      "level_10_sounds_like": "A magnetic communicator — speaks in complete, flowing sentences with natural rhythm, zero fillers, strategic pauses, and confident pace that commands attention.",
+      "steps_to_7": ["<specific daily action 1>","<specific daily action 2>","<specific daily action 3>"]
+    },
+    "structure": {
+      "current_score": <their structure score>,
+      "current_sounds_like": "<honest description of their structure level>",
+      "level_7_sounds_like": "<description of structure level 7>",
+      "steps_to_7": ["<specific action 1>","<specific action 2>","<specific action 3>"]
+    },
+    "clarity": {
+      "current_score": <their clarity score>,
+      "current_sounds_like": "<honest description>",
+      "level_7_sounds_like": "<description of clarity level 7>",
+      "steps_to_7": ["<specific action 1>","<specific action 2>","<specific action 3>"]
+    }
+  },
+  "model_speech": "<A complete 45-60 second PREP speech for this exact question. Written as natural spoken words — not an essay. Include smooth transitions. This is what an excellent answer sounds like.>",
+  "vocabulary": [
+    {"word":"<strong word relevant to this topic>","meaning":"<clear simple meaning>","used_in_model":"<exact sentence from model_speech where this word appears>"},
+    {"word":"<another>","meaning":"<meaning>","used_in_model":"<sentence>"},
+    {"word":"<another>","meaning":"<meaning>","used_in_model":"<sentence>"},
+    {"word":"<another>","meaning":"<meaning>","used_in_model":"<sentence>"},
+    {"word":"<another>","meaning":"<meaning>","used_in_model":"<sentence>"}
+  ]
 }`;
 
   try {
@@ -719,7 +785,7 @@ Return ONLY a valid JSON object. No markdown. No text outside the JSON.
       },
       body:JSON.stringify({
         model:'claude-sonnet-4-20250514',
-        max_tokens:1200,
+        max_tokens:3000,
         messages:[{role:'user',content:prompt}]
       })
     });
@@ -737,7 +803,15 @@ Return ONLY a valid JSON object. No markdown. No text outside the JSON.
     try{ fb=JSON.parse(clean); }
     catch(e){ throw new Error('Malformed response from Claude. Check API key credits.\n\n'+clean.slice(0,300)); }
 
-    S.sessions.push({question:S.question,score:fb.overall_score,fillers:fc,pauses:S.pauses.length,fw:S.fw,time:new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})});
+    S.sessions.push({
+      question:S.question, score:fb.overall_score, fillers:fc,
+      pauses:S.pauses.length, fw:S.fw,
+      wpm: wpm, duration: dur,
+      time:new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}),
+      date:new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}),
+      transcript: S.transcript,
+      feedback: fb
+    });
     S.totalFillers+=fc;
     updateSidebar();
     saveSessions();
@@ -761,7 +835,7 @@ Return ONLY a valid JSON object. No markdown. No text outside the JSON.
 /* ── RENDER FEEDBACK ── */
 function sc(n){return n>=7?'sg':n>=4?'sm':'sb';}
 
-function renderFeedback(fb,fc,wpm,microP,natP,longP){
+function renderFeedback(fb, fc, wpm, microP, natP, longP){
   const vocab=(fb.vocabulary_swaps||[]).map(v=>
     `<div class="vocab-item"><span class="vo">${v.original}</span><span style="color:var(--muted)">→</span><span class="vb">${v.better}</span></div>`
   ).join('')||'<span style="color:var(--muted);font-size:0.85rem;">No weak vocabulary found.</span>';
@@ -769,10 +843,60 @@ function renderFeedback(fb,fc,wpm,microP,natP,longP){
   const str=(fb.strengths||[]).map(s=>`<li class="gi">✓ ${s}</li>`).join('');
   const imp=(fb.improvements||[]).map(s=>`<li class="bi">✗ ${s}</li>`).join('');
 
-  document.getElementById('fb-area').innerHTML=`
-    <div style="background:var(--surface2);border-left:2px solid var(--accent);padding:0.75rem 1rem;border-radius:0 6px 6px 0;font-size:0.9rem;color:var(--text);font-style:italic;margin-bottom:0.5rem;">
+  // Tone color
+  const toneColor = fb.tone?.score>=70?'var(--green)':fb.tone?.score>=40?'var(--accent)':'var(--red)';
+  const toneBg = fb.tone?.score>=70?'rgba(90,184,138,0.12)':fb.tone?.score>=40?'rgba(200,169,110,0.12)':'rgba(224,90,90,0.12)';
+  const toneSignals = (fb.tone?.signals||[]).map(s=>`<span style="background:var(--surface2);border:0.5px solid var(--border2);border-radius:4px;padding:2px 8px;font-size:0.78rem;color:var(--muted);">"${s}"</span>`).join(' ');
+
+  // Gap plan renderer
+  function gapSection(label, g){
+    if(!g) return '';
+    const pct = Math.round((g.current_score/10)*100);
+    const color = g.current_score>=7?'var(--green)':g.current_score>=4?'var(--accent)':'var(--red)';
+    const steps = (g.steps_to_7||[]).map((s,i)=>`<div style="display:flex;gap:10px;margin-bottom:8px;"><span style="color:var(--accent);font-size:0.8rem;min-width:20px;">${i+1}.</span><span style="font-size:0.85rem;color:var(--muted);line-height:1.6;">${s}</span></div>`).join('');
+    return `
+      <div style="margin-bottom:1.25rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-size:0.78rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);">${label}</span>
+          <span style="font-size:0.9rem;font-weight:bold;color:${color};">${g.current_score}/10 → 7</span>
+        </div>
+        <div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-bottom:10px;">
+          <div style="width:${pct}%;height:100%;background:${color};border-radius:3px;"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+          <div style="background:var(--surface2);border:0.5px solid var(--border);border-radius:8px;padding:0.75rem;">
+            <div style="font-size:0.65rem;color:var(--red);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">You now (${g.current_score}/10)</div>
+            <div style="font-size:0.82rem;color:var(--muted);line-height:1.5;">${g.current_sounds_like}</div>
+          </div>
+          <div style="background:var(--surface2);border:0.5px solid var(--border);border-radius:8px;padding:0.75rem;">
+            <div style="font-size:0.65rem;color:var(--green);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">Goal (7/10)</div>
+            <div style="font-size:0.82rem;color:var(--muted);line-height:1.5;">${g.level_7_sounds_like}</div>
+          </div>
+        </div>
+        <div style="font-size:0.72rem;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;">Steps to reach 7:</div>
+        ${steps}
+      </div>`;
+  }
+
+  // Level 10 note
+  const level10 = fb.gap_plan?.fluency?.level_10_sounds_like||'A magnetic communicator — speaks in complete, flowing sentences with natural rhythm, zero fillers, strategic pauses, and confident pace that commands attention.';
+
+  // Vocabulary cards
+  const vocabCards = (fb.vocabulary||[]).map(v=>`
+    <div style="background:var(--surface2);border:0.5px solid var(--border2);border-radius:var(--r);padding:1rem;margin-bottom:8px;">
+      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:4px;">
+        <span style="color:var(--accent);font-size:1rem;">${v.word}</span>
+        <span style="color:var(--muted);font-size:0.78rem;">${v.meaning}</span>
+      </div>
+      <div style="font-size:0.82rem;color:var(--text);font-style:italic;border-left:2px solid var(--border2);padding-left:8px;line-height:1.6;">"${v.used_in_model}"</div>
+    </div>`).join('');
+
+  document.getElementById('fb-area').innerHTML = `
+
+    <div style="background:var(--surface2);border-left:2px solid var(--accent);padding:0.75rem 1rem;border-radius:0 6px 6px 0;font-size:0.9rem;color:var(--text);font-style:italic;">
       "${fb.one_line_verdict}"
     </div>
+
     <div class="score-row">
       <div class="score-card"><div class="sc-val ${sc(fb.structure_score)}">${fb.structure_score}</div><div class="sc-label">Structure</div></div>
       <div class="score-card"><div class="sc-val ${sc(fb.fluency_score)}">${fb.fluency_score}</div><div class="sc-label">Fluency</div></div>
@@ -781,24 +905,78 @@ function renderFeedback(fb,fc,wpm,microP,natP,longP){
       <div class="score-card"><div class="sc-val ${fc>5?'sb':fc>2?'sm':'sg'}">${fc}</div><div class="sc-label">Fillers</div></div>
       <div class="score-card"><div class="sc-val" style="color:var(--blue)">${wpm}</div><div class="sc-label">WPM</div></div>
     </div>
+
     <div class="fb-section">
-      <h4>Pause Analysis</h4>
+      <h4>Tone of Your Speech</h4>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+        <div style="background:${toneBg};border:0.5px solid ${toneColor};border-radius:20px;padding:4px 16px;font-size:0.85rem;color:${toneColor};">${fb.tone?.label||'—'}</div>
+        <div style="flex:1;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;">
+          <div style="width:${fb.tone?.score||0}%;height:100%;background:${toneColor};border-radius:3px;"></div>
+        </div>
+        <span style="font-size:0.8rem;color:var(--muted);">${fb.tone?.score||0}%</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">${toneSignals}</div>
+      <p style="font-size:0.85rem;color:var(--muted);line-height:1.6;">${fb.tone?.advice||''}</p>
+    </div>
+
+    <div class="fb-section">
+      <h4>${S.fw} Framework</h4>
+      <p style="margin-bottom:6px;color:${fb.framework_followed?'var(--green)':'var(--red)'};">${fb.framework_followed?'✓ Followed':'✗ Not clearly followed'}</p>
+      <p style="font-size:0.85rem;color:var(--muted);line-height:1.6;">${fb.framework_breakdown}</p>
+    </div>
+
+    <div class="fb-section">
+      <h4>Pause Pattern</h4>
       <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
         <span class="pause-chip pc-micro">${microP} micro</span>
         <span class="pause-chip pc-natural">${natP} natural</span>
         <span class="pause-chip pc-long">${longP} long</span>
       </div>
-      <p>${fb.pause_analysis}</p>
+      <p style="font-size:0.85rem;color:var(--muted);line-height:1.6;">${fb.pause_analysis}</p>
     </div>
+
     <div class="fb-section">
-      <h4>${S.fw} Framework</h4>
-      <p style="margin-bottom:6px;color:${fb.framework_followed?'var(--green)':'var(--red)'};">${fb.framework_followed?'✓ Followed':'✗ Not clearly followed'}</p>
-      <p>${fb.framework_breakdown}</p>
+      <h4>Strengths</h4>
+      <ul>${str||'<li style="color:var(--muted)">None identified.</li>'}</ul>
     </div>
-    <div class="fb-section"><h4>Strengths</h4><ul>${str||'<li style="color:var(--muted)">None identified.</li>'}</ul></div>
-    <div class="fb-section"><h4>Improvements</h4><ul>${imp||'<li style="color:var(--muted)">None needed.</li>'}</ul></div>
-    <div class="fb-section"><h4>Vocabulary Upgrades</h4>${vocab}</div>
-    <div class="fb-section"><h4>Fluency Note</h4><p>${fb.fluency_note}</p></div>
+
+    <div class="fb-section">
+      <h4>Improvements</h4>
+      <ul>${imp||'<li style="color:var(--muted)">None needed.</li>'}</ul>
+    </div>
+
+    <div class="fb-section">
+      <h4>Vocabulary Upgrades — From Your Transcript</h4>
+      ${vocab}
+    </div>
+
+    <div class="fb-section">
+      <h4>Your Growth Roadmap — Current → 7/10</h4>
+      <div style="background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--r);padding:0.85rem 1rem;margin-bottom:1rem;">
+        <div style="font-size:0.68rem;color:var(--accent);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:4px;">Level 10 — Magnetic Communicator</div>
+        <div style="font-size:0.85rem;color:var(--muted);line-height:1.6;">${level10}</div>
+      </div>
+      ${gapSection('Fluency', fb.gap_plan?.fluency)}
+      ${gapSection('Structure', fb.gap_plan?.structure)}
+      ${gapSection('Clarity', fb.gap_plan?.clarity)}
+    </div>
+
+    <div class="fb-section">
+      <h4>How You Should Have Spoken — Model Speech (45–60s)</h4>
+      <div style="background:var(--surface2);border:0.5px solid var(--border2);border-radius:var(--r);padding:1.25rem;font-size:0.92rem;line-height:1.9;color:var(--text);white-space:pre-wrap;margin-bottom:8px;">${fb.model_speech||''}</div>
+      <button class="coach-copy-btn" onclick="navigator.clipboard.writeText(document.querySelector('#fb-area .fb-section:last-of-type div').textContent)">Copy Speech</button>
+    </div>
+
+    <div class="fb-section">
+      <h4>Vocabulary from the Model Speech</h4>
+      <p style="font-size:0.78rem;color:var(--muted);margin-bottom:10px;">These are the words a strong speaker would use for this topic — learn them in context.</p>
+      ${vocabCards}
+    </div>
+
+    <div class="fb-section">
+      <h4>Fluency Note</h4>
+      <p style="font-size:0.85rem;color:var(--muted);line-height:1.6;">${fb.fluency_note}</p>
+    </div>
   `;
 }
 
@@ -823,14 +1001,28 @@ function renderProgress(){
         <div class="bar-track"><div class="bar-fill" style="width:${s.score*10}%;background:${s.score>=7?'var(--green)':s.score>=4?'var(--accent)':'var(--red)'};"></div></div>
         <div class="bar-val">${s.score}/10</div>
       </div>`).join('');
-    document.getElementById('hist-list').innerHTML=[...ss].reverse().slice(0,10).map(s=>`
-      <div class="hist-item">
-        <div>
-          <div class="hi-q">${s.question.slice(0,70)}${s.question.length>70?'...':''}</div>
-          <div class="hi-meta">${s.fw} · ${s.fillers} fillers · ${s.pauses} pauses · ${s.time}</div>
+    document.getElementById('hist-list').innerHTML=[...ss].reverse().slice(0,20).map((s,i)=>{
+      const idx=ss.length-1-i;
+      const hasFeedback=s.feedback;
+      return `<div class="hist-item" style="flex-direction:column;align-items:stretch;cursor:${hasFeedback?'pointer':'default'};" ${hasFeedback?`onclick="toggleHistFeedback(${idx})"`:''}> 
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div class="hi-q">${s.question.slice(0,80)}${s.question.length>80?'...':''}</div>
+            <div class="hi-meta">${s.fw} · ${s.fillers} fillers · ${s.pauses} pauses · ${s.time} ${hasFeedback?'· <span style="color:var(--accent)">tap to expand</span>':''}</div>
+          </div>
+          <div class="hi-score">${s.score}/10</div>
         </div>
-        <div class="hi-score">${s.score}/10</div>
-      </div>`).join('');
+        ${hasFeedback?`<div id="hist-fb-${idx}" style="display:none;margin-top:1rem;padding-top:1rem;border-top:0.5px solid var(--border);">
+          <div style="font-size:0.82rem;color:var(--text);font-style:italic;margin-bottom:0.75rem;">"${s.feedback.one_line_verdict||''}"</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:0.75rem;">
+            <span style="font-size:0.78rem;background:var(--surface2);padding:3px 10px;border-radius:10px;color:var(--muted);">Structure ${s.feedback.structure_score}/10</span>
+            <span style="font-size:0.78rem;background:var(--surface2);padding:3px 10px;border-radius:10px;color:var(--muted);">Fluency ${s.feedback.fluency_score}/10</span>
+            <span style="font-size:0.78rem;background:var(--surface2);padding:3px 10px;border-radius:10px;color:var(--muted);">Clarity ${s.feedback.clarity_score}/10</span>
+          </div>
+          <div style="font-size:0.82rem;color:var(--muted);line-height:1.7;margin-bottom:0.5rem;"><strong style="color:var(--accent);">Model Speech:</strong><br>${s.feedback.model_speech||'Not saved'}</div>
+        </div>`:''}
+      </div>`;
+    }).join('');
   } else {
     ['pg-avg','pg-best'].forEach(id=>document.getElementById(id).textContent='—');
     document.getElementById('pg-f').textContent='0';
@@ -841,11 +1033,22 @@ function saveKey(){
   const v=document.getElementById('key-input').value.trim();
   if(v.startsWith('sk-')){
     S.apiKey=v;
+    try{ localStorage.setItem('speaksharp_apikey', v); }catch(e){}
     document.getElementById('key-badge').textContent='Saved ✓';
     document.getElementById('key-badge').className='key-badge key-ok';
   } else {
     alert('Key should start with sk-ant- — copy from console.anthropic.com');
   }
+}
+
+function loadApiKey(){
+  try{
+    const v=localStorage.getItem('speaksharp_apikey');
+    if(v){ S.apiKey=v; document.getElementById('key-input').value=v;
+      document.getElementById('key-badge').textContent='Saved ✓';
+      document.getElementById('key-badge').className='key-badge key-ok';
+    }
+  }catch(e){}
 }
 
 /* ── LOCALSTORAGE PERSISTENCE ── */
@@ -1016,7 +1219,203 @@ function copySpeech(id){
 /* ── INIT ── */
 setFramework('PREP',document.querySelector('.fw-tab.active'));
 loadSessions();
-loadQuestion();
+loadApiKey();
+loadTheme();
+loadTopics();
+
+/* ── EXPORT / IMPORT ── */
+function exportHistory(){
+  if(!S.sessions.length){ alert('No sessions to export yet.'); return; }
+  const data = JSON.stringify(S.sessions, null, 2);
+  const blob = new Blob([data], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'speaksharp-history.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importHistory(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    try {
+      const imported = JSON.parse(ev.target.result);
+      if(!Array.isArray(imported)) throw new Error('Invalid format');
+      const merged = [...S.sessions];
+      imported.forEach(s=>{
+        const exists = merged.find(x=>x.time===s.time && x.question===s.question);
+        if(!exists) merged.push(s);
+      });
+      S.sessions = merged;
+      S.totalFillers = S.sessions.reduce((a,s)=>a+(s.fillers||0),0);
+      saveSessions();
+      updateSidebar();
+      alert('Imported '+imported.length+' sessions. Duplicates skipped.');
+    } catch(err){
+      alert('Import failed: '+err.message);
+    }
+  };
+  reader.readAsText(file);
+  e.target.value='';
+}
+
+/* ── THEME TOGGLE ── */
+function toggleTheme(){
+  const isLight = document.body.classList.toggle('light');
+  document.getElementById('theme-btn').textContent = isLight ? '☀️' : '🌙';
+  try{ localStorage.setItem('speaksharp_theme', isLight?'light':'dark'); }catch(e){}
+}
+function loadTheme(){
+  try{
+    if(localStorage.getItem('speaksharp_theme')==='light'){
+      document.body.classList.add('light');
+      document.getElementById('theme-btn').textContent='☀️';
+    }
+  }catch(e){}
+}
+
+/* ── HISTORY EXPAND ── */
+function toggleHistFeedback(idx){
+  const el=document.getElementById('hist-fb-'+idx);
+  if(!el) return;
+  if(el.style.display!=='none'){ el.style.display='none'; return; }
+  const s=S.sessions[idx];
+  const fb=s.feedback;
+  if(!fb){ el.style.display='block'; return; }
+
+  const sc=n=>n>=7?'var(--green)':n>=4?'var(--accent)':'var(--red)';
+
+  const vocab=(fb.vocabulary_swaps||[]).map(v=>
+    `<div class="vocab-item"><span class="vo">${v.original}</span><span style="color:var(--muted)">→</span><span class="vb">${v.better}</span></div>`
+  ).join('')||'<span style="color:var(--muted);font-size:0.82rem;">None</span>';
+
+  const str=(fb.strengths||[]).map(s=>`<li class="gi" style="font-size:0.82rem;">✓ ${s}</li>`).join('');
+  const imp=(fb.improvements||[]).map(s=>`<li class="bi" style="font-size:0.82rem;">✗ ${s}</li>`).join('');
+
+  const toneColor=fb.tone?.score>=70?'var(--green)':fb.tone?.score>=40?'var(--accent)':'var(--red)';
+
+  function gapBlock(label,g){
+    if(!g) return '';
+    const steps=(g.steps_to_7||[]).map((st,i)=>
+      `<div style="display:flex;gap:8px;margin-bottom:6px;">
+        <span style="color:var(--accent);font-size:0.78rem;min-width:16px;">${i+1}.</span>
+        <span style="font-size:0.82rem;color:var(--muted);line-height:1.5;">${st}</span>
+      </div>`).join('');
+    return `<div style="margin-bottom:1rem;">
+      <div style="font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">${label} — ${g.current_score}/10 → 7</div>
+      <div style="height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-bottom:8px;">
+        <div style="width:${g.current_score*10}%;height:100%;background:${sc(g.current_score)};border-radius:3px;"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
+        <div style="background:var(--bg);border:0.5px solid var(--border);border-radius:6px;padding:0.6rem;">
+          <div style="font-size:0.62rem;color:var(--red);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px;">Now (${g.current_score}/10)</div>
+          <div style="font-size:0.78rem;color:var(--muted);line-height:1.4;">${g.current_sounds_like}</div>
+        </div>
+        <div style="background:var(--bg);border:0.5px solid var(--border);border-radius:6px;padding:0.6rem;">
+          <div style="font-size:0.62rem;color:var(--green);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px;">Goal (7/10)</div>
+          <div style="font-size:0.78rem;color:var(--muted);line-height:1.4;">${g.level_7_sounds_like}</div>
+        </div>
+      </div>
+      ${steps}
+    </div>`;
+  }
+
+  const vocabCards=(fb.vocabulary||[]).map(v=>
+    `<div style="background:var(--bg);border:0.5px solid var(--border);border-radius:8px;padding:0.85rem;margin-bottom:6px;">
+      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:4px;">
+        <span style="color:var(--accent);font-size:0.95rem;">${v.word}</span>
+        <span style="color:var(--muted);font-size:0.75rem;">${v.meaning}</span>
+      </div>
+      <div style="font-size:0.8rem;color:var(--text);font-style:italic;border-left:2px solid var(--border2);padding-left:8px;line-height:1.6;">"${v.used_in_model}"</div>
+    </div>`).join('');
+
+  el.innerHTML=`
+    <div style="font-size:0.82rem;color:var(--text);font-style:italic;margin-bottom:1rem;padding:0.75rem 1rem;background:var(--bg);border-left:2px solid var(--accent);border-radius:0 6px 6px 0;">
+      "${fb.one_line_verdict||''}"
+    </div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem;">
+      <div style="text-align:center;background:var(--bg);border:0.5px solid var(--border);border-radius:8px;padding:0.6rem 1rem;flex:1;min-width:70px;">
+        <div style="font-size:1.4rem;font-weight:bold;color:${sc(fb.structure_score)};">${fb.structure_score}</div>
+        <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">Structure</div>
+      </div>
+      <div style="text-align:center;background:var(--bg);border:0.5px solid var(--border);border-radius:8px;padding:0.6rem 1rem;flex:1;min-width:70px;">
+        <div style="font-size:1.4rem;font-weight:bold;color:${sc(fb.fluency_score)};">${fb.fluency_score}</div>
+        <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">Fluency</div>
+      </div>
+      <div style="text-align:center;background:var(--bg);border:0.5px solid var(--border);border-radius:8px;padding:0.6rem 1rem;flex:1;min-width:70px;">
+        <div style="font-size:1.4rem;font-weight:bold;color:${sc(fb.clarity_score)};">${fb.clarity_score}</div>
+        <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">Clarity</div>
+      </div>
+      <div style="text-align:center;background:var(--bg);border:0.5px solid var(--border);border-radius:8px;padding:0.6rem 1rem;flex:1;min-width:70px;">
+        <div style="font-size:1.4rem;font-weight:bold;color:${sc(fb.overall_score)};">${fb.overall_score}</div>
+        <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">Overall</div>
+      </div>
+      <div style="text-align:center;background:var(--bg);border:0.5px solid var(--border);border-radius:8px;padding:0.6rem 1rem;flex:1;min-width:70px;">
+        <div style="font-size:1.4rem;font-weight:bold;color:${toneColor};">${fb.tone?.label||'—'}</div>
+        <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">Tone</div>
+      </div>
+      <div style="text-align:center;background:var(--bg);border:0.5px solid var(--border);border-radius:8px;padding:0.6rem 1rem;flex:1;min-width:70px;">
+        <div style="font-size:1.4rem;font-weight:bold;color:var(--blue);">${s.wpm||'—'}</div>
+        <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">WPM</div>
+      </div>
+    </div>
+
+    ${s.transcript?`<div style="margin-bottom:1rem;">
+      <div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;">Your Transcript</div>
+      <div style="background:var(--bg);border:0.5px solid var(--border);border-radius:8px;padding:0.85rem;font-size:0.82rem;color:var(--muted);line-height:1.8;">${s.transcript}</div>
+    </div>`:''}
+
+    <div style="margin-bottom:1rem;">
+      <div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;">${s.fw} Framework</div>
+      <p style="font-size:0.82rem;color:${fb.framework_followed?'var(--green)':'var(--red)'};margin-bottom:4px;">${fb.framework_followed?'✓ Followed':'✗ Not followed'}</p>
+      <p style="font-size:0.82rem;color:var(--muted);line-height:1.6;">${fb.framework_breakdown||''}</p>
+    </div>
+
+    <div style="margin-bottom:1rem;">
+      <div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;">Tone</div>
+      <p style="font-size:0.82rem;color:var(--muted);line-height:1.6;">${fb.tone?.advice||''}</p>
+    </div>
+
+    <div style="margin-bottom:1rem;">
+      <div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;">Strengths</div>
+      <ul style="margin-left:1rem;">${str||'<li style="color:var(--muted);font-size:0.82rem;">None identified</li>'}</ul>
+    </div>
+
+    <div style="margin-bottom:1rem;">
+      <div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;">Improvements</div>
+      <ul style="margin-left:1rem;">${imp||'<li style="color:var(--muted);font-size:0.82rem;">None needed</li>'}</ul>
+    </div>
+
+    <div style="margin-bottom:1rem;">
+      <div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;">Vocabulary Upgrades</div>
+      ${vocab}
+    </div>
+
+    <div style="margin-bottom:1rem;">
+      <div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Growth Roadmap — Current → 7/10</div>
+      ${gapBlock('Fluency', fb.gap_plan?.fluency)}
+      ${gapBlock('Structure', fb.gap_plan?.structure)}
+      ${gapBlock('Clarity', fb.gap_plan?.clarity)}
+    </div>
+
+    <div style="margin-bottom:1rem;">
+      <div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Model Speech</div>
+      <div style="background:var(--bg);border:0.5px solid var(--border2);border-radius:8px;padding:1rem;font-size:0.85rem;line-height:1.9;color:var(--text);white-space:pre-wrap;">${fb.model_speech||'Not saved'}</div>
+    </div>
+
+    <div>
+      <div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Vocabulary from Model Speech</div>
+      ${vocabCards||'<span style="color:var(--muted);font-size:0.82rem;">Not saved</span>'}
+    </div>
+  `;
+
+  el.style.display='block';
+}
+
 
 // Browser check
 (()=>{

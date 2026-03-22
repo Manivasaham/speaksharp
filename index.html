@@ -104,6 +104,27 @@ audio{width:100%;max-width:400px;}
 .bar-track{flex:1;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden;}
 .bar-fill{height:100%;border-radius:4px;transition:width 0.6s ease;}
 .bar-val{font-size:0.78rem;color:var(--muted);min-width:36px;}
+.coach-speech-box{background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--r);padding:1.25rem;font-size:0.92rem;line-height:1.9;color:var(--text);white-space:pre-wrap;margin-bottom:0.75rem;}
+.coach-copy-btn{background:none;border:0.5px solid var(--border2);color:var(--muted);padding:5px 14px;border-radius:6px;cursor:pointer;font-size:0.78rem;transition:all 0.2s;}
+.coach-copy-btn:hover{color:var(--text);border-color:var(--accent);}
+.coach-quick-btn{background:none;border:0.5px solid var(--border);color:var(--muted);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:0.78rem;transition:all 0.2s;}
+.coach-quick-btn:hover{color:var(--text);border-color:var(--border2);}
+.opener-item{background:var(--surface2);border-left:2px solid var(--accent);padding:0.75rem 1rem;border-radius:0 6px 6px 0;font-size:0.88rem;color:var(--text);margin-bottom:8px;line-height:1.6;}
+.opener-label{font-size:0.68rem;color:var(--accent);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:4px;}
+.closer-item{background:var(--surface2);border-left:2px solid var(--blue);padding:0.75rem 1rem;border-radius:0 6px 6px 0;font-size:0.88rem;color:var(--text);margin-bottom:8px;line-height:1.6;}
+.vocab-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;}
+.vocab-tag{background:var(--surface2);border:0.5px solid var(--border2);border-radius:6px;padding:6px 12px;font-size:0.82rem;min-width:120px;}
+.vocab-tag .vt-word{color:var(--accent);}
+.vocab-tag .vt-def{color:var(--muted);font-size:0.75rem;display:block;margin-top:2px;line-height:1.4;}
+.tone-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.tone-label{font-size:0.78rem;color:var(--muted);min-width:80px;}
+.tone-track{flex:1;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden;}
+.tone-fill{height:100%;border-radius:4px;}
+.tone-val{font-size:0.78rem;color:var(--muted);min-width:36px;}
+.tone-badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:0.78rem;margin-right:6px;margin-bottom:6px;}
+.tb-pos{background:rgba(90,184,138,0.15);color:var(--green);border:0.5px solid var(--green);}
+.tb-neg{background:rgba(224,90,90,0.12);color:var(--red);border:0.5px solid var(--red);}
+.tb-neu{background:rgba(136,134,128,0.15);color:var(--muted);border:0.5px solid var(--muted);}
 </style>
 </head>
 <body>
@@ -112,6 +133,7 @@ audio{width:100%;max-width:400px;}
   <div class="logo">SpeakSharp <span>SPEAKING COACH</span></div>
   <nav>
     <button class="active" onclick="showPage('practice',this)">Practice</button>
+    <button onclick="showPage('coach',this)">Coach</button>
     <button onclick="showPage('progress',this)">Progress</button>
     <button onclick="showPage('settings',this)">Settings</button>
   </nav>
@@ -202,6 +224,68 @@ audio{width:100%;max-width:400px;}
       </div>
     </div>
 
+    <!-- COACH -->
+    <div class="page" id="page-coach">
+      <div class="panel">
+        <div class="panel-title">Speech Builder</div>
+        <p style="font-size:0.85rem;color:var(--muted);line-height:1.7;margin-bottom:1rem;">
+          Enter any topic or question. Get two model speeches (45s and 60s), vocabulary, opening lines, closing lines, and tone guidance.
+        </p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <input id="coach-topic" type="text" placeholder="e.g. Is competition healthy in a workplace?" style="flex:1;background:var(--surface2);border:0.5px solid var(--border2);color:var(--text);padding:10px 14px;border-radius:8px;font-size:0.9rem;font-family:Georgia,serif;min-width:200px;"/>
+          <button class="analyze-btn" id="coach-btn" onclick="buildSpeech()">Build Speech →</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+          <button class="coach-quick-btn" onclick="useCurrentQuestion()">Use current practice question ↗</button>
+        </div>
+      </div>
+
+      <div id="coach-output" style="display:none;display:flex;flex-direction:column;gap:1.5rem;">
+
+        <div class="panel">
+          <div class="panel-title">Tone Guide</div>
+          <div id="coach-tone"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">Opening Lines — 4 ways to start</div>
+          <div id="coach-openers"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">Model Speech — 45 seconds (PREP)</div>
+          <div id="coach-speech45" class="coach-speech-box"></div>
+          <button class="coach-copy-btn" onclick="copySpeech('coach-speech45')">Copy</button>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">Model Speech — 60 seconds (PREP)</div>
+          <div id="coach-speech60" class="coach-speech-box"></div>
+          <button class="coach-copy-btn" onclick="copySpeech('coach-speech60')">Copy</button>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">Closing Lines — 3 ways to end strong</div>
+          <div id="coach-closers"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">Vocabulary for this topic</div>
+          <div id="coach-vocab"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">Tone Analysis — Are you positive, negative, or complaining?</div>
+          <div id="coach-tone-detail"></div>
+        </div>
+
+      </div>
+
+      <div id="coach-loading" style="display:none;" class="panel">
+        <div class="loading">Building your speech guide...</div>
+      </div>
+    </div>
+
     <!-- PROGRESS -->
     <div class="page" id="page-progress">
       <div class="panel">
@@ -229,13 +313,21 @@ audio{width:100%;max-width:400px;}
         <div class="panel-title">Anthropic API Key</div>
         <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem;line-height:1.7;">
           Get your key at <a href="https://console.anthropic.com" style="color:var(--accent);">console.anthropic.com</a> — free tier available.<br>
-          Stored in memory only. Cleared on tab close.
+          Key stored in memory only — clears on tab close. Progress is saved to localStorage.
         </p>
         <div class="api-row">
           <input type="password" id="key-input" placeholder="sk-ant-..."/>
           <button class="save-btn" onclick="saveKey()">Save</button>
           <span class="key-badge key-no" id="key-badge">Not set</span>
         </div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Session Data</div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem;line-height:1.7;">
+          Your practice history is saved in your browser's localStorage — it persists across tab closes and restarts.<br>
+          Path: <code style="color:var(--accent)">localStorage → speaksharp_sessions</code>
+        </p>
+        <button class="save-btn" onclick="clearHistory()" style="border-color:var(--red);color:var(--red);">Clear All History</button>
       </div>
       <div class="panel">
         <div class="panel-title">Run locally (required for mic)</div>
@@ -648,6 +740,7 @@ Return ONLY a valid JSON object. No markdown. No text outside the JSON.
     S.sessions.push({question:S.question,score:fb.overall_score,fillers:fc,pauses:S.pauses.length,fw:S.fw,time:new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})});
     S.totalFillers+=fc;
     updateSidebar();
+    saveSessions();
     renderFeedback(fb,fc,wpm,microP,natP,longP);
 
   } catch(err){
@@ -755,14 +848,180 @@ function saveKey(){
   }
 }
 
+/* ── LOCALSTORAGE PERSISTENCE ── */
+const LS_KEY = 'speaksharp_sessions';
+
+function saveSessions(){
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(S.sessions));
+  } catch(e){ console.warn('localStorage save failed:',e); }
+}
+
+function loadSessions(){
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if(raw){
+      S.sessions = JSON.parse(raw);
+      S.totalFillers = S.sessions.reduce((a,s)=>a+(s.fillers||0),0);
+      updateSidebar();
+    }
+  } catch(e){ console.warn('localStorage load failed:',e); }
+}
+
+function clearHistory(){
+  if(!confirm('Delete all session history? This cannot be undone.')) return;
+  S.sessions = []; S.totalFillers = 0;
+  saveSessions();
+  updateSidebar();
+  renderProgress();
+}
+
+/* ── COACH FEATURE ── */
+function useCurrentQuestion(){
+  document.getElementById('coach-topic').value = S.question;
+  document.getElementById('coach-topic').focus();
+}
+
+async function buildSpeech(){
+  const topic = document.getElementById('coach-topic').value.trim();
+  if(!topic){ alert('Enter a topic or question first.'); return; }
+  if(!S.apiKey){ alert('Add your API key in Settings first.'); showPage('settings',null); return; }
+
+  document.getElementById('coach-btn').disabled = true;
+  document.getElementById('coach-btn').textContent = 'Building...';
+  document.getElementById('coach-output').style.display = 'none';
+  document.getElementById('coach-loading').style.display = 'block';
+
+  const prompt = `You are an expert speaking coach. For the topic/question below, create a complete speech preparation guide.
+
+TOPIC: "${topic}"
+FRAMEWORK: PREP (Point → Reason → Example → Point restate)
+
+Return ONLY valid JSON, no markdown, no text outside:
+{
+  "topic_stance": "<one sentence: what position/angle to take on this topic>",
+  "tone_guidance": "<2 sentences on the right tone — positive, constructive, confident — and what to avoid>",
+  "tone_scores": {
+    "positive": <0-100 recommended>,
+    "constructive": <0-100 recommended>,
+    "emotional": <0-100 recommended>
+  },
+  "avoid_tones": ["<tone to avoid, e.g. complaining>","<another>"],
+  "openers": [
+    {"style":"Question Hook","line":"<opening line that starts with a question>"},
+    {"style":"Bold Statement","line":"<opening line that makes a strong assertion>"},
+    {"style":"Story/Scenario","line":"<opening line that sets a brief scenario>"},
+    {"style":"Statistic/Fact","line":"<opening line using a fact or number>"}
+  ],
+  "speech_45s": "<A complete ~100 word PREP speech on this topic. Written naturally as spoken words, not bullet points. Include all four PREP parts clearly. Use natural pauses and transitions.>",
+  "speech_60s": "<A complete ~130 word PREP speech on this topic. Same structure but richer — more developed example, stronger closing. Written as natural spoken words.>",
+  "closers": [
+    {"style":"Call to Action","line":"<closing line that calls the audience to act or think differently>"},
+    {"style":"Circle Back","line":"<closing line that echoes the opening for symmetry>"},
+    {"style":"Memorable Punch","line":"<short punchy memorable final line>"}
+  ],
+  "vocabulary": [
+    {"word":"<strong word for this topic>","definition":"<brief meaning>","use":"<example use in a sentence>"},
+    {"word":"<another>","definition":"<brief>","use":"<example>"},
+    {"word":"<another>","definition":"<brief>","use":"<example>"},
+    {"word":"<another>","definition":"<brief>","use":"<example>"},
+    {"word":"<another>","definition":"<brief>","use":"<example>"},
+    {"word":"<another>","definition":"<brief>","use":"<example>"}
+  ],
+  "tone_analysis": "<3-4 sentences specifically about this topic's emotional territory — is it easy to slip into complaining or negativity? How to keep it constructive? What words signal a negative drift? What signals a positive, confident speaker?>"
+}`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':S.apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:2000,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+
+    if(!res.ok){ const e=await res.json().catch(()=>({})); throw new Error(e.error?.message||'HTTP '+res.status); }
+    const data = await res.json();
+    const raw = data.content.find(b=>b.type==='text')?.text||'';
+    const clean = raw.replace(/```json|```/g,'').trim();
+    const c = JSON.parse(clean);
+    renderCoach(c, topic);
+
+  } catch(err){
+    document.getElementById('coach-loading').innerHTML =
+      `<div style="color:var(--red);font-size:0.88rem;line-height:1.8;"><strong>Error:</strong> ${err.message}</div>`;
+  }
+
+  document.getElementById('coach-btn').disabled = false;
+  document.getElementById('coach-btn').textContent = 'Build Speech →';
+}
+
+function renderCoach(c, topic){
+  document.getElementById('coach-loading').style.display = 'none';
+  document.getElementById('coach-output').style.display = 'flex';
+
+  // Tone Guide
+  const avoidBadges = (c.avoid_tones||[]).map(t=>`<span class="tone-badge tb-neg">${t}</span>`).join('');
+  document.getElementById('coach-tone').innerHTML =
+    `<p style="font-size:0.88rem;color:var(--text);line-height:1.7;margin-bottom:0.75rem;"><strong>Stance:</strong> ${c.topic_stance}</p>
+     <p style="font-size:0.88rem;color:var(--muted);line-height:1.7;margin-bottom:0.75rem;">${c.tone_guidance}</p>
+     <div style="margin-bottom:6px;font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;">Avoid these tones:</div>
+     ${avoidBadges}`;
+
+  // Openers
+  document.getElementById('coach-openers').innerHTML = (c.openers||[]).map(o=>
+    `<div class="opener-item"><div class="opener-label">${o.style}</div>${o.line}</div>`
+  ).join('');
+
+  // Speeches
+  document.getElementById('coach-speech45').textContent = c.speech_45s||'';
+  document.getElementById('coach-speech60').textContent = c.speech_60s||'';
+
+  // Closers
+  document.getElementById('coach-closers').innerHTML = (c.closers||[]).map(o=>
+    `<div class="closer-item"><div class="opener-label" style="color:var(--blue);">${o.style}</div>${o.line}</div>`
+  ).join('');
+
+  // Vocabulary
+  document.getElementById('coach-vocab').innerHTML =
+    `<div class="vocab-grid">${(c.vocabulary||[]).map(v=>
+      `<div class="vocab-tag"><span class="vt-word">${v.word}</span><span class="vt-def">${v.definition}</span><span class="vt-def" style="color:var(--text);font-style:italic;">"${v.use}"</span></div>`
+    ).join('')}</div>`;
+
+  // Tone scores bar chart
+  const ts = c.tone_scores||{positive:70,constructive:80,emotional:40};
+  document.getElementById('coach-tone-detail').innerHTML =
+    `<div class="tone-row"><div class="tone-label">Positive</div><div class="tone-track"><div class="tone-fill" style="width:${ts.positive}%;background:var(--green);"></div></div><div class="tone-val">${ts.positive}%</div></div>
+     <div class="tone-row"><div class="tone-label">Constructive</div><div class="tone-track"><div class="tone-fill" style="width:${ts.constructive}%;background:var(--blue);"></div></div><div class="tone-val">${ts.constructive}%</div></div>
+     <div class="tone-row"><div class="tone-label">Emotional</div><div class="tone-track"><div class="tone-fill" style="width:${ts.emotional}%;background:var(--accent);"></div></div><div class="tone-val">${ts.emotional}%</div></div>
+     <p style="font-size:0.88rem;color:var(--muted);line-height:1.7;margin-top:0.75rem;">${c.tone_analysis}</p>`;
+}
+
+function copySpeech(id){
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn = document.querySelector(`#${id} + button`) || document.querySelector(`.coach-copy-btn`);
+    const allBtns = document.querySelectorAll('.coach-copy-btn');
+    allBtns.forEach(b=>{ if(b.previousElementSibling && b.previousElementSibling.id===id){ b.textContent='Copied ✓'; setTimeout(()=>b.textContent='Copy',1500); } });
+  }).catch(()=>alert('Copy failed — select the text manually'));
+}
+
 /* ── INIT ── */
 setFramework('PREP',document.querySelector('.fw-tab.active'));
+loadSessions();
 loadQuestion();
 
 // Browser check
 (()=>{
   if(location.protocol==='file:'){
-    setStatus('⚠ Opened via file:// — mic is blocked. Run: python3 -m http.server 8080, then open http://localhost:8080/speaking-coach.html in Chrome','var(--accent)');
+    setStatus('⚠ Opened via file:// — mic is blocked. Run: python3 -m http.server 8080, then open http://localhost:8080 in Chrome','var(--accent)');
     return;
   }
   const issues=[];
